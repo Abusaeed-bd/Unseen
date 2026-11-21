@@ -70,11 +70,13 @@ class MainActivity : ComponentActivity() {
  * DNS straight to that provider, encrypted, and Unseen cannot see or block it.
  */
 @Suppress("DEPRECATION") // allNetworks: still the simplest way to see the non-VPN networks
-fun isPrivateDnsStrict(context: Context): Boolean {
-    val cm = context.getSystemService(ConnectivityManager::class.java) ?: return false
-    return cm.allNetworks.any { network ->
+fun isPrivateDnsStrict(context: Context): Boolean = try {
+    val cm = context.getSystemService(ConnectivityManager::class.java)
+    cm != null && cm.allNetworks.any { network ->
         val caps = cm.getNetworkCapabilities(network)
         val isVpn = caps?.hasTransport(NetworkCapabilities.TRANSPORT_VPN) == true
         !isVpn && cm.getLinkProperties(network)?.privateDnsServerName != null
     }
+} catch (e: Exception) {
+    false
 }

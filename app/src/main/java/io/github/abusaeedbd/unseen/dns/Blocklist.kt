@@ -39,7 +39,12 @@ object Blocklist {
     val size: Int get() = matcher.size
 
     fun load(context: Context) {
-        matcher = context.assets.open("blocklist.txt").bufferedReader().useLines { DomainMatcher.parse(it) }
+        matcher = try {
+            context.assets.open("blocklist.txt").bufferedReader().useLines { DomainMatcher.parse(it) }
+        } catch (e: java.io.IOException) {
+            android.util.Log.e("Unseen", "blocklist.txt missing from assets", e)
+            DomainMatcher(emptyList())
+        }
     }
 
     fun isBlocked(name: String): Boolean = matcher.matches(name)

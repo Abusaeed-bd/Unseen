@@ -49,7 +49,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
@@ -62,6 +66,7 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.abusaeedbd.unseen.R
 import io.github.abusaeedbd.unseen.data.AppNames
+import io.github.abusaeedbd.unseen.data.CrashLog
 import io.github.abusaeedbd.unseen.data.Prefs
 import io.github.abusaeedbd.unseen.data.Stats
 import io.github.abusaeedbd.unseen.vpn.UnseenVpnService
@@ -106,6 +111,7 @@ private fun HomeScreen(
     val blocked by Stats.blockedToday.collectAsStateWithLifecycle()
     val perApp by Stats.perApp.collectAsStateWithLifecycle()
 
+    var crash by remember { mutableStateOf(CrashLog.read(context)) }
     var strictDns by remember { mutableStateOf(false) }
     LifecycleResumeEffect(Unit) {
         strictDns = isPrivateDnsStrict()
@@ -122,6 +128,14 @@ private fun HomeScreen(
     ) {
         Text("Unseen", fontSize = 28.sp, fontWeight = FontWeight.Bold)
         Text("Apps can't watch what they can't see.", color = Muted, fontSize = 14.sp)
+
+        crash?.let { report ->
+            Spacer(Modifier.height(24.dp))
+            CrashCard(report, onDismiss = {
+                CrashLog.clear(context)
+                crash = null
+            })
+        }
 
         Spacer(Modifier.height(40.dp))
         Box(
@@ -197,6 +211,29 @@ private fun HomeScreen(
         Spacer(Modifier.height(16.dp))
         OutlinedButton(onClick = onOpenApps, modifier = Modifier.fillMaxWidth().height(52.dp)) {
             Text("Manage apps")
+        }
+    }
+}
+
+@Composable
+private fun CrashCard(report: String, onDismiss: () -> Unit) {
+    val clipboard = LocalClipboardManager.current
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = CardBg),
+    ) {
+        Column(Modifier.padding(20.dp)) {
+            Text("Unseen crashed last time", color = Warning, fontWeight = FontWeight.SemiBold)
+            Spacer(Modifier.height(4.dp))
+            Text("Copy this report and send it to the developer.", color = Muted, fontSize = 14.sp)
+            Spacer(Modifier.height(8.dp))
+            SelectionContainer {
+                Text(report.take(1500), fontFamily = FontFamily.Monospace, fontSize = 11.sp, color = Muted)
+            }
+            Row {
+                TextButton(onClick = { clipboard.setText(AnnotatedString(report)) }) { Text("Copy report") }
+                TextButton(onClick = onDismiss) { Text("Dismiss") }
+            }
         }
     }
 }
