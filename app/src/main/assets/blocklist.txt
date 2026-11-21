@@ -1,0 +1,106 @@
+# Unseen starter blocklist (v1)
+# One domain per line; every subdomain is blocked too.
+# Focus: analytics, ad and tracking SDKs found inside apps.
+# Kept out on purpose so apps keep working: login/API servers
+# (graph.facebook.com, googleapis.com), push notifications, crash reporting.
+
+# Google ads and analytics
+google-analytics.com
+googleadservices.com
+googlesyndication.com
+doubleclick.net
+app-measurement.com
+firebaselogging-pa.googleapis.com
+adservice.google.com
+pagead2.googlesyndication.com
+admob.com
+
+# Meta (Facebook) ads and pixel
+an.facebook.com
+connect.facebook.net
+pixel.facebook.com
+
+# TikTok / ByteDance
+analytics.tiktok.com
+ads.tiktok.com
+analytics-sg.tiktok.com
+pangleglobal.com
+pangle.io
+
+# Mobile attribution and analytics SDKs
+appsflyer.com
+appsflyersdk.com
+adjust.com
+adjust.net.in
+kochava.com
+singular.net
+branch.io
+mixpanel.com
+api.amplitude.com
+api2.amplitude.com
+api.segment.io
+mparticle.com
+data.flurry.com
+appmetrica.yandex.net
+report.appmetrica.yandex.net
+startup.mobile.yandex.net
+clevertap-prod.com
+wzrkt.com
+moengage.com
+webengage.com
+hotjar.com
+hotjar.io
+smartlook.com
+uxcam.com
+appcenter.ms
+in.appcenter.ms
+
+# Mobile ad networks
+applovin.com
+applvn.com
+unityads.unity3d.com
+ads.unity3d.com
+ironsrc.com
+ironsrc.mobi
+supersonicads.com
+vungle.com
+liftoff.io
+chartboost.com
+adcolony.com
+inmobi.com
+startapp.com
+start.io
+mintegral.com
+mintegral.net
+rayjump.com
+smaato.net
+fyber.com
+inner-active.mobi
+tapjoy.com
+tapjoyads.com
+mopub.com
+bidmachine.io
+yandexadexchange.net
+ads.mobile.yandex.net
+
+# Web ad exchanges and trackers (also used inside apps' web views)
+adnxs.com
+amazon-adsystem.com
+criteo.com
+criteo.net
+pubmatic.com
+rubiconproject.com
+openx.net
+taboola.com
+outbrain.com
+moatads.com
+scorecardresearch.com
+quantserve.com
+adsrvr.org
+bidswitch.net
+casalemedia.com
+media.net
+yieldmo.com
+3lift.com
+sharethrough.com
+teads.tv
