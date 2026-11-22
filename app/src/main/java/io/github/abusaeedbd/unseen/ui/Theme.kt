@@ -10,6 +10,8 @@ val Accent = Color(0xFF8B6CFF)
 val CardBg = Color(0xFF1C2140)
 val Muted = Color(0xFFA3A7C2)
 val Warning = Color(0xFFFFB25C)
+val Good = Color(0xFF4CD08A)
+val Bad = Color(0xFFFF6B6B)
 
 private val colors = darkColorScheme(
     primary = Accent,

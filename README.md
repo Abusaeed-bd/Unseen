@@ -17,13 +17,27 @@ make before they connect):
 
 All other internet traffic goes out directly, as usual.
 
-## Features (v0.1)
+## Features (v0.3)
 
-- One-tap protection on/off
-- "Trackers blocked today" counter
-- Which apps tried to reach trackers the most
-- Pause protection for a single app if it stops working
-- Turns itself back on after a reboot
+**Protection**
+- One-tap protection on/off, plus a Quick Settings tile
+- Blocks trackers (built in), ads (~78,000 domains), scam/phishing/malware sites and,
+  optionally, gambling sites. The lists update daily.
+- Spots fake bKash / Nagad pages and warns you with a notification
+- "Pause for 10 minutes" for banking apps; protection comes back by itself
+- Pause protection for a single app; allow a single site if blocking it broke something
+- bKash, Nagad and Rocket are left out by default (they refuse to run with a VPN on)
+
+**Awareness**
+- Today and last-7-days counts, with an estimate of mobile data saved
+- For each app: which companies it tried to send data to, and why
+- A–F privacy grade per app (tracker companies + sensitive permissions)
+- Weekly report notification every Friday evening, and a "Share my week" image
+
+**Safety**
+- App lock: fingerprint/PIN before protection can be turned off or apps paused
+- Alert and history entry if protection is turned off from phone settings
+- Guide to Android's Always-on VPN
 
 ## Known limits
 
@@ -48,9 +62,13 @@ Requires Android 10 or newer.
 
 ## Privacy
 
-Unseen has no analytics, no ads and no servers. Nothing leaves your phone.
+Unseen has no analytics, no ads and no servers. It only downloads the public block
+lists once a day; nothing about you or your apps is ever sent.
 
-## Blocklist
+## Lists
 
-`app/src/main/assets/blocklist.txt` — one domain per line; subdomains are
-blocked too.
+- Trackers: `app/src/main/assets/blocklist.txt` (one domain per line; subdomains blocked too)
+- Ads and gambling: [StevenBlack/hosts](https://github.com/StevenBlack/hosts) (MIT)
+- Phishing and malware: [malware-filter](https://gitlab.com/malware-filter) by curben (CC BY-SA 4.0),
+  built from OpenPhish, PhishTank and URLhaus data. OpenPhish's community feed is for
+  non-commercial use: check this before charging money for the app.

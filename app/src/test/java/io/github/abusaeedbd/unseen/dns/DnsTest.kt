@@ -114,3 +114,26 @@ class DnsTest {
         assertFalse(m.matches("google.com"))
     }
 }
+
+class LookalikeTest {
+    @Test
+    fun spotsFakeBkashAndNagad() {
+        assertTrue(Lookalike.isScam("bkash-bonus-offer.xyz"))
+        assertTrue(Lookalike.isScam("login.bkash.com.verify-account.top"))
+        assertTrue(Lookalike.isScam("nagad-gift.top"))
+        assertFalse(Lookalike.isScam("www.bkash.com"))
+        assertFalse(Lookalike.isScam("bkash.com"))
+        assertFalse(Lookalike.isScam("nagad.com.bd"))
+        assertFalse(Lookalike.isScam("nagadhat.com"))     // "nagad" alone is a normal word
+        assertFalse(Lookalike.isScam("google.com"))
+    }
+
+    @Test
+    fun skipsHostsFileNoise() {
+        val m = DomainMatcher.parse(
+            sequenceOf("127.0.0.1 localhost", "0.0.0.0 0.0.0.0", "::1 ip6-localhost", "0.0.0.0 ads.example.com")
+        )
+        assertEquals(1, m.size)
+        assertTrue(m.matches("x.ads.example.com"))
+    }
+}

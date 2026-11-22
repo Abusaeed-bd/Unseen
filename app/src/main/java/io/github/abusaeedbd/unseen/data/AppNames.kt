@@ -21,6 +21,7 @@ object AppNames {
     fun label(context: Context, packageName: String): String = labelByPackage.getOrPut(packageName) {
         when {
             packageName == "android" -> "Android system"
+            packageName == "uid:1051" -> "Android DNS service"
             packageName == "unknown" || packageName.startsWith("uid:") -> "Unknown app"
             else -> try {
                 val pm = context.packageManager
