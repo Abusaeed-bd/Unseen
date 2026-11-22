@@ -123,7 +123,9 @@ object Stats {
         val companyNames = HashSet<String>()
         for (k in keys) {
             apps[k]?.forEach { (pkg, n) -> appTotals[pkg] = (appTotals[pkg] ?: 0) + n }
-            domains[k]?.values?.forEach { m -> m.keys.forEach { companyNames.add(TrackerInfo.lookup(it).company) } }
+            domains[k]?.values?.forEach { m ->
+                m.keys.forEach { d -> companyNames.add(if (TrackerInfo.isKnown(d)) TrackerInfo.lookup(d).company else d) }
+            }
         }
         return WeekSummary(
             counts = lastDays(7),

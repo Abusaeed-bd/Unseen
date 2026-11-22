@@ -50,6 +50,19 @@ object TrackerInfo {
         "smartlook.com" to Tracker("Smartlook", SESSION),
         "uxcam.com" to Tracker("UXCam", SESSION),
         "appcenter.ms" to Tracker("Microsoft App Center", ANALYTICS),
+        "aria.microsoft.com" to Tracker("Microsoft telemetry", ANALYTICS),
+        "events.data.microsoft.com" to Tracker("Microsoft telemetry", ANALYTICS),
+        "vortex.data.microsoft.com" to Tracker("Microsoft telemetry", ANALYTICS),
+        "telemetry.microsoft.com" to Tracker("Microsoft telemetry", ANALYTICS),
+        "ads-twitter.com" to Tracker("X (Twitter) Ads", ADS),
+        "ads-api.twitter.com" to Tracker("X (Twitter) Ads", ADS),
+        "analytics.twitter.com" to Tracker("X (Twitter) Analytics", ANALYTICS),
+        "crashlytics.com" to Tracker("Google Crashlytics", "Sends crash and usage reports"),
+        "onesignal.com" to Tracker("OneSignal", ANALYTICS),
+        "bugsnag.com" to Tracker("Bugsnag", "Sends crash and usage reports"),
+        "sentry.io" to Tracker("Sentry", "Sends crash and usage reports"),
+        "newrelic.com" to Tracker("New Relic", ANALYTICS),
+        "nr-data.net" to Tracker("New Relic", ANALYTICS),
         "applovin.com" to Tracker("AppLovin", ADS),
         "applvn.com" to Tracker("AppLovin", ADS),
         "unity3d.com" to Tracker("Unity Ads", ADS),
@@ -105,12 +118,16 @@ object TrackerInfo {
             io.github.abusaeedbd.unseen.dns.Category.GAMBLING ->
                 Tracker("Gambling site", "Betting or casino site")
             io.github.abusaeedbd.unseen.dns.Category.AD ->
-                if (known.company != UNKNOWN.company) known else Tracker("Ad server", ADS)
+                if (known !== UNKNOWN) known
+                else Tracker("Ad or tracking server", "On public ad-blocking lists: shows ads or collects data about you")
             else -> known
         }
     }
 
     private val UNKNOWN = Tracker("Tracker", "Collects data about you for ads or analytics")
+
+    /** True when we know which company runs this domain. */
+    fun isKnown(domain: String): Boolean = lookup(domain) !== UNKNOWN
 
     fun lookup(domain: String): Tracker {
         var d = domain.lowercase().trimEnd('.')

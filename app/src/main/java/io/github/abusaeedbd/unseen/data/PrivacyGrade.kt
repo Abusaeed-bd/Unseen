@@ -30,17 +30,25 @@ object PrivacyGrade {
     )
 
     const val EXPLANATION =
-        "The grade starts at 100. Each tracker company the app contacted in the last 7 days " +
+        "The grade starts at 100. Each tracker company (or unnamed tracker) the app contacted in the last 7 days " +
             "takes off 12 points (up to 5 companies), and each sensitive permission it holds " +
             "takes off 8 points (up to 5). A: 85+, B: 70+, C: 55+, D: 40+, F: below 40."
 
     fun of(context: Context, packageName: String): Grade {
-        val companies = Stats.weekDomains(packageName)
+        val domains = Stats.weekDomains(packageName)
+        val named = domains.filter { TrackerInfo.isKnown(it) }
             .map { TrackerInfo.lookup(it).company }
             .distinct()
             .sorted()
+        val unnamed = domains.count { !TrackerInfo.isKnown(it) }
+        val companies = named + when (unnamed) {
+            0 -> emptyList()
+            1 -> listOf("1 unnamed tracker")
+            else -> listOf("$unnamed unnamed trackers")
+        }
         val permissions = grantedSensitive(context, packageName)
-        val score = (100 - 12 * minOf(companies.size, 5) - 8 * minOf(permissions.size, 5)).coerceIn(0, 100)
+        val trackerCount = named.size + unnamed
+        val score = (100 - 12 * minOf(trackerCount, 5) - 8 * minOf(permissions.size, 5)).coerceIn(0, 100)
         val letter = when {
             score >= 85 -> 'A'
             score >= 70 -> 'B'
