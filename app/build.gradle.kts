@@ -12,14 +12,29 @@ android {
         applicationId = "io.github.abusaeedbd.unseen"
         minSdk = 29 // Android 10: needed to see which app made each request
         targetSdk = 35
-        versionCode = 6
-        versionName = "0.3.2"
+        versionCode = 7
+        versionName = "0.3.3"
+    }
+
+    // Release signing comes from environment variables (GitHub Secrets on the release
+    // workflow), so the key never lives in the repository.
+    val releaseKeystore = System.getenv("UNSEEN_KEYSTORE")
+    signingConfigs {
+        if (releaseKeystore != null) {
+            create("release") {
+                storeFile = file(releaseKeystore)
+                storePassword = System.getenv("UNSEEN_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("UNSEEN_KEY_ALIAS")
+                keyPassword = System.getenv("UNSEEN_KEY_PASSWORD")
+            }
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
+            if (releaseKeystore != null) signingConfig = signingConfigs.getByName("release")
         }
     }
 

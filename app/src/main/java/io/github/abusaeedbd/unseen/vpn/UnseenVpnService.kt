@@ -68,7 +68,8 @@ class UnseenVpnService : VpnService() {
         private const val ACTION_RESUME = "io.github.abusaeedbd.unseen.RESUME"
         private const val EXTRA_MINUTES = "minutes"
 
-        private const val CHANNEL_STATUS = "protection"
+        private const val CHANNEL_STATUS = "shield"
+        private const val OLD_CHANNEL_STATUS = "protection"
         private const val CHANNEL_ALERTS = "alerts"
         private const val NOTIFICATION_STATUS = 1
         private const val NOTIFICATION_TURNED_OFF = 2
@@ -161,7 +162,7 @@ class UnseenVpnService : VpnService() {
 
     /** User switched the VPN off in phone settings, or another VPN app took over. */
     override fun onRevoke() {
-        EventLog.add(this, "Protection turned off from phone settings or by another VPN app", warning = true)
+        EventLog.add(this, "Protection turned off from phone settings or by another app", warning = true)
         Prefs.setWantOn(this, false)
         alertTurnedOff()
         shutDown()
@@ -272,8 +273,13 @@ class UnseenVpnService : VpnService() {
 
     private fun showStatus() {
         val nm = getSystemService(NotificationManager::class.java)
+        // A minimum-importance channel: Android keeps the notification (required while
+        // protecting) but folds it away and shows no extra icon in the status bar.
+        nm?.deleteNotificationChannel(OLD_CHANNEL_STATUS)
         nm?.createNotificationChannel(
-            NotificationChannel(CHANNEL_STATUS, "Protection status", NotificationManager.IMPORTANCE_LOW)
+            NotificationChannel(CHANNEL_STATUS, "Shield status", NotificationManager.IMPORTANCE_MIN).apply {
+                setShowBadge(false)
+            }
         )
         val open = PendingIntent.getActivity(
             this, 0, Intent(this, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE
@@ -282,6 +288,8 @@ class UnseenVpnService : VpnService() {
             .setSmallIcon(R.drawable.ic_stat_unseen)
             .setContentIntent(open)
             .setOngoing(true)
+            .setShowWhen(false)
+            .setCategory(Notification.CATEGORY_SERVICE)
         if (_state.value == Protection.PAUSED) {
             val until = DateTimeFormatter.ofPattern("h:mm a")
                 .format(Instant.ofEpochMilli(_pausedUntil.value).atZone(ZoneId.systemDefault()))
@@ -296,8 +304,8 @@ class UnseenVpnService : VpnService() {
                     ).build()
                 )
         } else {
-            builder.setContentTitle("Unseen is protecting you")
-                .setContentText("Trackers, ads and scam sites are being blocked")
+            builder.setContentTitle("Unseen is on")
+                .setContentText("Blocking trackers, ads and scam sites on this phone")
         }
         val notification = builder.build()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {

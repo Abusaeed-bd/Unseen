@@ -53,6 +53,7 @@ object Stats {
     private const val KEY_DAYS = "days"               // date \t trackers \t ads \t scams \t gambling
     private const val KEY_APPS = "apps"               // date \t package \t count
     private const val KEY_DOMAINS = "domains"         // date \t package \t domain \t count
+    private const val KEY_HOURS = "hours"             // date \t hour \t count
     private const val KEEP_DAYS = 60L
     private const val KEEP_APP_DAYS = 7L
 
@@ -63,6 +64,7 @@ object Stats {
     private val days = HashMap<String, DayCounts>()
     private val apps = HashMap<String, HashMap<String, Int>>()                       // date -> pkg -> n
     private val domains = HashMap<String, HashMap<String, HashMap<String, Int>>>()  // date -> pkg -> domain -> n
+    private val hours = HashMap<String, IntArray>()                                  // date -> blocks per hour (0..23)
 
     private val _today = MutableStateFlow(DayCounts())
     val today: StateFlow<DayCounts> = _today.asStateFlow()
@@ -94,6 +96,11 @@ object Stats {
             val p = line.split('\t')
             if (p.size == 4) domains.getOrPut(p[0]) { HashMap() }.getOrPut(p[1]) { HashMap() }[p[2]] = n(p[3])
         }
+        prefs.getString(KEY_HOURS, "")!!.lines().forEach { line ->
+            val p = line.split('\t')
+            val hour = p.getOrNull(1)?.toIntOrNull()
+            if (p.size == 3 && hour != null && hour in 0..23) hours.getOrPut(p[0]) { IntArray(24) }[hour] = n(p[2])
+        }
         publish()
     }
 
@@ -105,6 +112,7 @@ object Stats {
         appsToday[appKey] = (appsToday[appKey] ?: 0) + 1
         val forApp = domains.getOrPut(day) { HashMap() }.getOrPut(appKey) { HashMap() }
         forApp[domain] = (forApp[domain] ?: 0) + 1
+        hours.getOrPut(day) { IntArray(24) }[java.time.LocalTime.now().hour]++
         publish()
         scheduleSave()
     }
@@ -168,6 +176,7 @@ object Stats {
         days.keys.removeAll { it < oldest }
         apps.keys.removeAll { it < oldestApp }
         domains.keys.removeAll { it < oldestApp }
+        hours.keys.removeAll { it < oldestApp }
         prefs.edit()
             .putString(KEY_DAYS, days.entries.joinToString("\n") { (d, c) ->
                 "$d\t${c.trackers}\t${c.ads}\t${c.scams}\t${c.gambling}"
@@ -180,8 +189,27 @@ object Stats {
                     m.entries.joinToString("\n") { (dom, n) -> "$d\t$pkg\t$dom\t$n" }
                 }
             })
+            .putString(KEY_HOURS, hours.entries.joinToString("\n") { (d, h) ->
+                h.indices.filter { h[it] > 0 }.joinToString("\n") { hour -> "$d\t$hour\t${h[hour]}" }
+            })
             .apply()
     }
+
+    /** Copies of everything kept, newest dates first, for the export report. */
+    data class Snapshot(
+        val days: Map<String, DayCounts>,
+        val apps: Map<String, Map<String, Int>>,
+        val domains: Map<String, Map<String, Map<String, Int>>>,
+        val hours: Map<String, List<Int>>,
+    )
+
+    @Synchronized
+    fun snapshot(): Snapshot = Snapshot(
+        days = days.toSortedMap(compareByDescending<String> { it }),
+        apps = apps.mapValues { HashMap(it.value) }.toSortedMap(compareByDescending<String> { it }),
+        domains = domains.mapValues { (_, byApp) -> byApp.mapValues { HashMap(it.value) } }.toSortedMap(compareByDescending<String> { it }),
+        hours = hours.mapValues { it.value.toList() }.toSortedMap(compareByDescending<String> { it }),
+    )
 
     /** Re-reads "today" (after midnight the screens should start from zero). */
     @Synchronized

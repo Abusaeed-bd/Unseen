@@ -15,8 +15,11 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.ContextCompat
 import io.github.abusaeedbd.unseen.data.EventLog
+import io.github.abusaeedbd.unseen.data.ExportReport
 import io.github.abusaeedbd.unseen.data.Prefs
 import io.github.abusaeedbd.unseen.data.WeeklyReport
 import io.github.abusaeedbd.unseen.dns.Blocklist
@@ -34,6 +37,9 @@ class MainActivity : ComponentActivity() {
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == RESULT_OK) UnseenVpnService.start(this)
         }
+
+    /** Shown before Android's own "VPN connection" dialog, to explain it in plain words. */
+    private val consentExplainer = mutableStateOf(false)
 
     private val askNotificationPermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { /* optional */ }
@@ -66,6 +72,10 @@ class MainActivity : ComponentActivity() {
                             filtersChanged = { Blocklist.applySettings(this) },
                             setAppLock = ::setAppLock,
                             share = { ShareCard.share(this) },
+                            exportReport = { ExportReport.share(this) },
+                            consentExplainer = consentExplainer,
+                            continueToConsent = ::continueToConsent,
+                            dismissExplainer = { consentExplainer.value = false },
                             isPrivateDnsStrict = { isPrivateDnsStrict(this) },
                             openNetworkSettings = { open(Settings.ACTION_WIRELESS_SETTINGS) },
                             openVpnSettings = { open(Settings.ACTION_VPN_SETTINGS) },
@@ -93,6 +103,15 @@ class MainActivity : ComponentActivity() {
 
     private fun turnOn() {
         // Android shows its own "Connection request" dialog the first time.
+        if (VpnService.prepare(this) != null) {
+            consentExplainer.value = true
+        } else {
+            UnseenVpnService.start(this)
+        }
+    }
+
+    private fun continueToConsent() {
+        consentExplainer.value = false
         val consent = VpnService.prepare(this)
         if (consent != null) askVpnPermission.launch(consent) else UnseenVpnService.start(this)
     }
@@ -134,6 +153,10 @@ class ScreenActions(
     val filtersChanged: () -> Unit,
     val setAppLock: (on: Boolean, done: (Boolean) -> Unit) -> Unit,
     val share: () -> Unit,
+    val exportReport: () -> Unit,
+    val consentExplainer: State<Boolean>,
+    val continueToConsent: () -> Unit,
+    val dismissExplainer: () -> Unit,
     val isPrivateDnsStrict: () -> Boolean,
     val openNetworkSettings: () -> Unit,
     val openVpnSettings: () -> Unit,

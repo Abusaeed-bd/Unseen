@@ -162,6 +162,9 @@ fun UnseenScreen(actions: ScreenActions) {
                     if (detailFor == null) TabBar(tab) { tab = it }
                 }
             }
+            if (actions.consentExplainer.value) {
+                ConsentExplainer(onContinue = actions.continueToConsent, onDismiss = actions.dismissExplainer)
+            }
             HudPill(hud, Modifier.align(Alignment.TopCenter).padding(top = 8.dp))
             if (showShare) {
                 ShareSheet(onDismiss = { showShare = false }, onShare = {
@@ -228,9 +231,9 @@ private fun Onboarding(onDone: () -> Unit) {
             IosHairline(36.dp)
             WelcomePoint("Nothing leaves your phone", "Unseen works on your phone only. No account, no servers, no ads.")
             IosHairline(36.dp)
-            WelcomePoint("You'll see a key icon at the top", "Android shows it whenever a VPN is on. Here, it means Unseen is protecting you.")
+            WelcomePoint("You'll see a key icon at the top", "Android shows it whenever an app filters your connections. Here, it simply means Unseen is protecting you.")
             IosHairline(36.dp)
-            WelcomePoint("Banking apps keep working", "bKash, Nagad and Rocket are left out from the start, because they refuse to open with a VPN on.")
+            WelcomePoint("Banking apps keep working", "bKash, Nagad and Rocket are left out from the start, because they won't open while any filter like Unseen is on.")
         }
         Spacer(Modifier.height(24.dp))
         PrimaryButton("Get started", onDone)
@@ -371,7 +374,7 @@ private fun HomeScreen(
             }
             if (state != Protection.OFF) {
                 Text(
-                    "Handy for banking apps that refuse to open with a VPN on.",
+                    "Handy for banking apps that won't open while Unseen is on.",
                     color = Label3,
                     fontSize = 11.sp,
                     textAlign = TextAlign.Center,
@@ -533,7 +536,7 @@ private fun ProtectionOrb(state: Protection, onClick: () -> Unit) {
             contentAlignment = Alignment.Center,
         ) {
             Image(
-                painterResource(if (state == Protection.ON) R.drawable.ic_brand_ghost else R.drawable.ic_brand_ghost_plain),
+                painterResource(if (state == Protection.ON) R.drawable.ic_brand_ghost_orb else R.drawable.ic_brand_ghost_plain),
                 contentDescription = null,
                 modifier = Modifier.size(56.dp).alpha(if (state == Protection.ON) 1f else 0.65f),
             )
@@ -674,7 +677,7 @@ private fun AppListRow(
                     }
                 }
                 Text(
-                    if (isProtected) "$blockedToday blocked today · ${app.category}" else "Paused · Bypasses VPN",
+                    if (isProtected) "$blockedToday blocked today · ${app.category}" else "Paused · Not filtered",
                     color = if (isProtected) Label2 else IosOrange,
                     fontSize = 12.sp,
                     fontWeight = if (isProtected) FontWeight.Normal else FontWeight.Medium,
@@ -1060,8 +1063,8 @@ private fun SettingsScreen(actions: ScreenActions) {
                     Text(
                         when {
                             state != Protection.ON -> "Turn protection on to check this setting."
-                            alwaysOn -> "Always-on VPN is ON. Unseen comes back by itself if it is closed."
-                            else -> "Turn on Always-on VPN so Unseen restarts by itself if someone closes it."
+                            alwaysOn -> "Always-on is ON. Unseen comes back by itself if it is closed."
+                            else -> "Turn on Always-on so Unseen restarts by itself if someone closes it."
                         },
                         color = if (state == Protection.ON && alwaysOn) IosGreen else Label2,
                         fontSize = 13.sp,
@@ -1069,7 +1072,7 @@ private fun SettingsScreen(actions: ScreenActions) {
                     )
                     Text(
                         buildAnnotatedString {
-                            append("In VPN settings: tap the gear next to ")
+                            append("Android keeps this under \"VPN\" in Settings, the name it uses for any app that filters connections. There: tap the gear next to ")
                             withStyle(SpanStyle(color = Color.White, fontWeight = FontWeight.Medium)) { append("Unseen") }
                             append(" → turn on ")
                             withStyle(SpanStyle(color = Color.White, fontWeight = FontWeight.Medium)) { append("\"Always-on VPN\"") }
@@ -1083,7 +1086,7 @@ private fun SettingsScreen(actions: ScreenActions) {
                     )
                     if (lockdown) {
                         Text(
-                            "\"Block connections without VPN\" is ON. Turn it off: Unseen only handles DNS.",
+                            "\"Block connections without VPN\" is ON. Turn it off: Unseen only filters on your phone, so this setting cuts your internet.",
                             color = IosOrange,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Medium,
@@ -1096,7 +1099,7 @@ private fun SettingsScreen(actions: ScreenActions) {
                             .padding(vertical = 2.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text("Open VPN settings", color = AccentSoft, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                        Text("Open Android settings", color = AccentSoft, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
                         Icon(painterResource(R.drawable.ic_chevron_right), contentDescription = null, tint = AccentSoft, modifier = Modifier.size(14.dp))
                     }
                 }
@@ -1163,6 +1166,32 @@ private fun SettingsScreen(actions: ScreenActions) {
             }
         }
 
+        // Your data
+        Column {
+            IosSectionHeader("Your data")
+            IosGroup {
+                IosRow(
+                    onClick = {
+                        actions.exportReport()
+                        hud("Report ready to share")
+                    },
+                    trailing = {
+                        Icon(painterResource(R.drawable.ic_share), contentDescription = null, tint = AccentSoft, modifier = Modifier.size(18.dp))
+                    },
+                ) {
+                    Text("Export report", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                    Text(
+                        "A file with what Unseen blocked: per day, per hour, per app and per site, plus your settings.",
+                        color = Label2,
+                        fontSize = 12.sp,
+                        lineHeight = 17.sp,
+                        modifier = Modifier.padding(top = 2.dp),
+                    )
+                }
+            }
+            IosFooter("It lists the apps you use and the trackers they contacted, not the websites you visit. Nothing leaves your phone unless you share the file.")
+        }
+
         // About
         Column {
             IosSectionHeader("About")
@@ -1184,6 +1213,89 @@ private fun SettingsScreen(actions: ScreenActions) {
                     )
                 }
             }
+        }
+    }
+}
+
+// ================================================================ before Android's dialog
+
+/**
+ * Android's permission dialog says "VPN connection", which many people distrust.
+ * This sheet explains, before that dialog, what Unseen actually does.
+ */
+@Composable
+private fun ConsentExplainer(onContinue: () -> Unit, onDismiss: () -> Unit) {
+    BackHandler(onBack = onDismiss)
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.7f))
+            .clickable(onClickLabel = "Close", onClick = onDismiss),
+        contentAlignment = Alignment.BottomCenter,
+    ) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
+                .background(Grouped)
+                .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { }
+                .padding(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 24.dp)
+        ) {
+            Box(Modifier.align(Alignment.CenterHorizontally).size(36.dp, 5.dp).clip(RoundedCornerShape(50)).background(Color.White.copy(alpha = 0.25f)))
+            Spacer(Modifier.height(16.dp))
+            Text("One quick step", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+            Text(
+                "Next, Android will ask to allow a \"VPN connection\". That is simply the name Android gives to any app " +
+                    "that filters connections on your phone. Unseen is not a VPN service.",
+                color = Label2,
+                fontSize = 14.sp,
+                lineHeight = 20.sp,
+                modifier = Modifier.padding(top = 6.dp),
+            )
+            Spacer(Modifier.height(16.dp))
+            IosGroup {
+                TrustPoint("Stays on your phone", "Nothing is sent to any server. No account, no tracking.")
+                IosHairline(36.dp)
+                TrustPoint("Your location and IP don't change", "Websites and apps see you exactly as before.")
+                IosHairline(36.dp)
+                TrustPoint("Banking apps keep working", "bKash, Nagad and Rocket are left out from the start.")
+                IosHairline(36.dp)
+                TrustPoint("Open for anyone to check", "Unseen's code is public on GitHub.")
+            }
+            Text(
+                "While Unseen is on, Android shows a small key icon at the top. That's normal.",
+                color = Label2,
+                fontSize = 12.sp,
+                lineHeight = 17.sp,
+                modifier = Modifier.padding(start = 4.dp, end = 4.dp, top = 10.dp),
+            )
+            Spacer(Modifier.height(16.dp))
+            PrimaryButton("Continue", onContinue)
+            Text(
+                "Not now",
+                color = AccentSoft,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.SemiBold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 6.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .clickable(role = Role.Button, onClick = onDismiss)
+                    .padding(vertical = 12.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun TrustPoint(title: String, body: String) {
+    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
+        Box(Modifier.padding(top = 6.dp).size(8.dp).clip(CircleShape).background(IosGreen))
+        Spacer(Modifier.width(12.dp))
+        Column {
+            Text(title, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+            Text(body, color = Label2, fontSize = 13.sp, lineHeight = 18.sp)
         }
     }
 }

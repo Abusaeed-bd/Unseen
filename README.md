@@ -60,6 +60,24 @@ the APK on GitHub Actions (see the **Actions** tab → latest run → *Artifacts
 
 Requires Android 10 or newer.
 
+## Releases (signed APK)
+
+Every published GitHub release gets a signed APK attached automatically
+(`.github/workflows/release.yml`).
+
+One-time setup, in **Settings → Secrets and variables → Actions**, add:
+
+| Secret | Value |
+| --- | --- |
+| `KEYSTORE_BASE64` | the release keystore, base64-encoded |
+| `KEYSTORE_PASSWORD` | keystore password |
+| `KEY_ALIAS` | `unseen` |
+| `KEY_PASSWORD` | key password |
+
+To release: **Releases → Draft a new release →** new tag like `v0.3.3` → **Publish**.
+After a few minutes `Unseen-v0.3.3.apk` appears on the release page.
+The key itself is never stored in this repository.
+
 ## Privacy
 
 Unseen has no analytics, no ads and no servers. It only downloads the public block
