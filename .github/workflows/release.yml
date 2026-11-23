@@ -37,7 +37,13 @@ jobs:
             echo "::error::KEYSTORE_BASE64 secret is missing. See README → Releases."
             exit 1
           fi
-          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+          # Remove spaces, line breaks and any stray characters picked up while pasting.
+          CLEAN=$(printf '%s' "$KEYSTORE_BASE64" | tr -cd 'A-Za-z0-9+/=')
+          echo "Key text length: ${#CLEAN} (expected 5728)"
+          if ! printf '%s' "$CLEAN" | base64 -d > "$RUNNER_TEMP/release.jks" 2>/dev/null; then
+            echo "::error::KEYSTORE_BASE64 is not complete. Paste the whole text from KEYSTORE_BASE64.txt again."
+            exit 1
+          fi
           echo "UNSEEN_KEYSTORE=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
 
       - name: Test and build signed APK
